@@ -1,0 +1,219 @@
+meta:
+    name: &studyname generator_example
+    mode: multiple
+    vascusynth_path: external/VascuSynth/bin/VascuSynth
+    random_seeds:
+        start: 1
+        end: 100
+    ray:
+        num_cpus: 24
+        memory: 12884901888 #12 * 1024 * 1024 * 1024
+        num_mesh_processes: 1
+  
+patient:
+    identifier: &id random_seed.5
+    body:
+        size:
+            width:
+                distribution: normal
+                mean: 800
+                std: 100
+                min: 500
+                max: 1100
+            depth:
+                distribution: normal
+                mean: 250
+                std: 50
+                min: 150
+                max: 450
+            height:
+                distribution: normal
+                mean: 1700
+                std: 70
+                min: 1200
+                max: 2100
+
+    heart:
+        location: # Proportion of body size: (0 - 1)
+            x:
+                distribution: normal
+                mean: 0.5
+                std: 0.05
+                min: 0.3
+                max: 0.7
+            y:
+                distribution: normal
+                mean: 0.5
+                std: 0.05
+                min: 0.3
+                max: 0.7
+            z:
+                distribution: normal
+                mean: 0.3
+                std: 0.04
+                min: 0.2
+                max: 0.4
+        size:
+            width:
+                distribution: normal
+                mean: 60
+                std: 4
+                min: 45
+                max: 75
+            depth:
+                distribution: normal
+                mean: 80
+                std: 10
+                min: 60
+                max: 100
+            height:
+                distribution: normal
+                mean: 120
+                std: 15
+                min: 90
+                max: 150
+            thickness: # As a percentage of "completely thick" - i.e. a full ellipsoid
+                distribution: normal
+                mean: 0.7
+                std: 0.02
+                min: 0.65
+                max: 0.75
+            ostium_diameter:
+                distribution: normal
+                mean: 3
+                std: 0.5
+                min: 2
+                max: 5
+        rotation:
+            mode: "degree"
+            x:
+                distribution: normal
+                mean: 0
+                std: 15
+                min: -45
+                max: 45
+            y:
+                distribution: normal
+                mean: 0
+                std: 15
+                min: -45
+                max: 45
+            z:
+                distribution: normal
+                mean: 90
+                std: 15
+                min: 45
+                max: 135
+
+
+    blood_vessels:
+        mesh:
+            random_seed: random_seed
+            perforation_pressure:
+                distribution: normal
+                mean: 200
+                std: 5
+                min: 150
+                max: 250
+            terminal_pressure:
+                distribution: normal
+                mean: 40
+                std: 15
+                min: 20
+                max: 45
+            perforation_flow:
+                distribution: normal
+                mean: 5000
+                std: 100
+                min: 4500
+                max: 5500
+            rho: 0.066
+            gamma: 3
+            lambda: 3
+            mu: 1
+            number_of_nodes:
+                distribution: uniform
+                dtype: int
+                min: 5
+                max: 50
+            minimum_distance: 30
+            closest_neighbours: 20
+            axial_refinement: 50
+            resolution: 0.5 # As proportion of minimum vessel radius
+        points:
+            number: 100000
+        voxels:
+            resolution: 32
+
+equipment:
+    fluoroscope:
+        name: GE OEC Elite Super C-Arm
+        specifications:
+        source_to_image_distance: 1040
+        pixel_size:
+            x: 0.25
+            y: 0.25
+        image_dimensions: # in pixels
+            width: 1536
+            height: 1496
+
+operation:
+    protocol:
+        # rotational:
+        #   sequence_timespan: # in seconds
+        #     distribution: uniform
+        #     min: 0.5
+        #     max: 3
+        #   framerate: 20 # in frames per second
+        #   ppa_start:
+        #     distribution: uniform
+        #     min: -90
+        #     max: -10
+        #   ppa_end:
+        #     distribution: uniform
+        #     min: 10
+        #     max: 90
+        #   psa_start:
+        #     distribution: uniform
+        #     min: -20
+        #     max: 0
+        #   psa_end:
+        #     distribution: uniform
+        #     min: 0
+        #     max: 20
+        sequence:
+            num_images: 4
+            ppa_start:
+                distribution: uniform
+                min: -120
+                max: 120
+            psa_start: 0
+            ppa_change: 5
+            psa_change: 0
+
+output:
+    root_directory: ../output/testing
+    save:
+        shape:
+        - swc
+        - ply
+        - "off"
+        - stl
+        image:
+        - image
+        - mask
+        - depth
+        - sample
+        - matrix
+        points: true
+        voxels: true
+        graph: false
+    image_processing:
+        raw: {}
+        onet:
+        - crop:
+            aspect_ratio: 1
+        - resize:
+            keep_aspect_ratio: True
+            x: 224
+  
