@@ -5,10 +5,7 @@ meta:
     random_seeds:
         start: 1
         end: 100
-    ray:
-        num_cpus: 24
-        memory: 12884901888 #12 * 1024 * 1024 * 1024
-        num_mesh_processes: 1
+    num_cpus: 24
   
 patient:
     identifier: &id random_seed.5
@@ -139,7 +136,7 @@ patient:
             minimum_distance: 30
             closest_neighbours: 20
             axial_refinement: 50
-            resolution: 0.5 # As proportion of minimum vessel radius
+            resolution: 0.8 # As proportion of minimum vessel radius
         points:
             number: 100000
         voxels:

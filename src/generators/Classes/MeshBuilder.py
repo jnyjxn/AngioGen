@@ -1,22 +1,19 @@
 import sys
-import time
-import random
-import argparse
-from pathlib import Path
 import math
-# import concurrent.futures
-from multiprocessing import Pool
 
 try:
 	import bpy
 except ImportError:
-	raise ImportError("This class cannot be used using Python. It must be run inside Blender as a script. Exiting.")
-
+	pass
+	
 class MeshBuilder(object):
 	def __init__(self, root_directory, id, mesh_resolution=0.8):
 		self.path = root_directory
 		self.id = id
 		self.mesh_resolution = mesh_resolution
+
+		if 'bpy' not in sys.modules:
+			raise ImportError("This class cannot be used using Python. It must be run inside Blender as a script. Exiting.")
 
 	def read_segments_from_file (self, swc_file_name):
 		# Read in the data
@@ -169,56 +166,3 @@ class MeshBuilder(object):
 		
 		bpy.ops.export_mesh.ply(filepath=str(output_ply_path),check_existing=False)
 		bpy.ops.export_mesh.stl(filepath=str(output_stl_path),check_existing=False,ascii=True)
-
-def run(path, i, mesh_resolution):
-	try:
-		builder = MeshBuilder(path, i, mesh_resolution)
-		obj = builder.get_one_mesh_obj()
-		builder.save_one_mesh(obj)
-		return True
-	except Exception as e:
-		print(e)
-		return False
-
-def check_all_swc_files_exist(config):
-	pass
-
-if __name__ == "__main__":
-	parser = argparse.ArgumentParser(description='Turn a set of SWC files into mesh files.')
-	parser.add_argument('--config', type=str,
-						help='The path to the root folder.')
-
-	path = Path(f"/home/localjja17/jja17/CoronaryVesselGeneration/AngioGenAppNew/output/testing/")
-	with Pool(24) as p:
-		results = p.starmap(run, [(path, i, 0.8) for i in range(1,101)])
-	
-	print(results)
-
-	# parser = argparse.ArgumentParser(description='Turn an SWC file into a volumetric Blender object.')
-	# parser.add_argument('--root_directory', type=str,
-	# 					help='The path to the root folder.')
-	# parser.add_argument('-r','--resolution', type=float, default=0.1,
-	# 					help='Set the resolution of the mesh, as a proportion of the smallest radius.')
-	# parser.add_argument('-t','--timeout', type=float, default=120,
-	# 					help='Set the maximum time without a signal from a parent process before autoshutdown. Set to 0 for no timeout.')
-	# parser.add_argument('-o','--overwrite', action="store_true",
-	# 					help='Overwrite existing files.')
-
-	# try:
-	# 	python_commands_index = sys.argv.index("--")
-	# 	parse_arguments = sys.argv[python_commands_index+1:]
-	# except ValueError:
-	# 	parse_arguments = sys.argv
-
-	# args, unknown = parser.parse_known_args(parse_arguments)
-
-	# app = MeshBuilderApplication(args.root_directory, args.resolution, args.overwrite, args.timeout)
-
-	# res, err = app.run()
-
-	# if err:
-	# 	sys.stderr.write(str(err))
-	# 	sys.stderr.flush()
-
-	# print("Exiting", flush=True)
-	# sys.exit(res)

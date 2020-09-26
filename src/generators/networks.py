@@ -3,19 +3,30 @@ import time
 import subprocess
 from pathlib import Path
 
-def generate_networks(cfg):
+def generate_networks(cfg, overwrite=False):
 	seed_start, seed_end = cfg.get_config("meta/random_seeds/start"), cfg.get_config("meta/random_seeds/end")
 	seeds = range(seed_start, seed_end + 1)
 
-	ray.init()
+	initialise_ray(cfg)
 
 	futures = [generate_one_network.remote(cfg, seed) for seed in seeds]
 	print(ray.get(futures))
 
+
+
+def initialise_ray(cfg):
+	ray_config={
+		"num_cpus": cfg.get_config("meta/num_cpus"),
+		}
+
+	additional_ray_config = {}
+
+	ray.init(**{**ray_config, **additional_ray_config})
+
 @ray.remote
 def generate_one_network(cfg, seed):
 	network_cfg = cfg.generate(seed=seed)
-	generator = Generator(network_cfg, seed)
+	generator = NetworkBuilder(network_cfg, seed)
 	try:
 		result = generator.run()
 	except Exception as e:
@@ -24,7 +35,7 @@ def generate_one_network(cfg, seed):
 	
 	return result
 
-class Generator(object):
+class NetworkBuilder(object):
 	return_codes = {
 		"SUCCESSFULLY_CREATED_NETWORK": 0b00,
 		"SKIPPED_EXISTING_NETWORK": 0b01,
