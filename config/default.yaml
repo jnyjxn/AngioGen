@@ -1,7 +1,6 @@
 meta:
     name: &studyname generator_example
     mode: multiple
-    vascusynth_path: external/VascuSynth/bin/VascuSynth
     random_seeds:
         start: 1
         end: 100
@@ -189,7 +188,7 @@ operation:
             psa_change: 0
 
 output:
-    root_directory: ../output/testing
+    root_directory: output/testing
     save:
         shape:
         - swc

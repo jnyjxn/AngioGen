@@ -1,15 +1,14 @@
 import os
 import sys
 import argparse
-import subprocess
 
 import bpy
 dir = os.path.dirname(bpy.data.filepath)
 if not dir in sys.path:
 	sys.path.append(dir)
 
-from utils import get_config
-from generators.meshes import generate_meshes
+from src.utils import get_config
+from src.mesh.generator import generate_meshes
 
 def main(config_path, overwrite=False):
 	default_config_path = "config/default.yaml"
@@ -17,7 +16,7 @@ def main(config_path, overwrite=False):
 
 	generate_meshes(cfg, overwrite=overwrite)
 
-if __name__ == "__main__":
+if __name__ == "__main__":	
 	parser = argparse.ArgumentParser(description='Turn a set of SWC files into mesh files.')
 	parser.add_argument('config_path', type=str, help='Path to the generator config file.')
 	parser.add_argument('-o','--overwrite', action="store_true", help='Overwrite existing files.')

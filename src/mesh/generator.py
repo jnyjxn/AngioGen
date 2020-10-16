@@ -1,7 +1,9 @@
+import io
 from pathlib import Path
 from multiprocessing import Pool
+from contextlib import redirect_stdout, redirect_stderr
 
-from generators.Classes import MeshBuilder
+from src.mesh.lib.MeshBuilder import MeshBuilder
 
 def generate_meshes(cfg, overwrite=False):
 	root_dir = cfg.get_config("output/root_directory")
@@ -19,9 +21,8 @@ def generate_meshes(cfg, overwrite=False):
 	print(results)
 
 def generate_one_mesh(path, i, mesh_resolution):
-	builder = MeshBuilder(path, i, mesh_resolution)
-	obj = builder.get_one_mesh_obj()
-	builder.save_one_mesh(obj)
-
-def check_all_swc_files_exist(cfg):
-	pass
+	stdout = io.StringIO()
+	with redirect_stdout(stdout), redirect_stderr(stdout):
+		builder = MeshBuilder(path, i, mesh_resolution)
+		obj = builder.get_one_mesh_obj()
+		builder.save_one_mesh(obj)

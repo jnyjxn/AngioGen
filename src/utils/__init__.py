@@ -18,16 +18,16 @@ def update_recursive(dict1, dict2):
 		else:
 			dict1[k] = v
 
-def get_config(path, default_path):
-    path = Path(path)
+def get_config(cfg_path, default_path):
+    cfg_path = Path(cfg_path)
     default_path = Path(default_path)
     
-    if not path.exists():
-        raise FileNotFoundError(f"{path} does not exist.")
+    if not cfg_path.exists():
+        raise FileNotFoundError(f"{cfg_path} does not exist.")
     if not default_path.exists():
         raise FileNotFoundError(f"{default_path} does not exist.")
 
-    with open(path, 'r') as f:
+    with open(cfg_path, 'r') as f:
         config_custom = yaml.safe_load(f)
 
     with open(default_path, 'r') as f:

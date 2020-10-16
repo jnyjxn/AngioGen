@@ -1,39 +1,6 @@
-import ray
 import time
 import subprocess
 from pathlib import Path
-
-def generate_networks(cfg, overwrite=False):
-	seed_start, seed_end = cfg.get_config("meta/random_seeds/start"), cfg.get_config("meta/random_seeds/end")
-	seeds = range(seed_start, seed_end + 1)
-
-	initialise_ray(cfg)
-
-	futures = [generate_one_network.remote(cfg, seed) for seed in seeds]
-	print(ray.get(futures))
-
-
-
-def initialise_ray(cfg):
-	ray_config={
-		"num_cpus": cfg.get_config("meta/num_cpus"),
-		}
-
-	additional_ray_config = {}
-
-	ray.init(**{**ray_config, **additional_ray_config})
-
-@ray.remote
-def generate_one_network(cfg, seed):
-	network_cfg = cfg.generate(seed=seed)
-	generator = NetworkBuilder(network_cfg, seed)
-	try:
-		result = generator.run()
-	except Exception as e:
-		print(e)
-		return -1
-	
-	return result
 
 class NetworkBuilder(object):
 	return_codes = {
@@ -48,7 +15,7 @@ class NetworkBuilder(object):
 		self.seed = seed
 
 	def run(self):
-		vascusynth_path = (Path(__file__) / '../..' / self.config.get_config('meta/vascusynth_path')).resolve()
+		vascusynth_path = (Path(__file__) / '../VascuSynth/bin/VascuSynth').resolve()
 		assert vascusynth_path.exists(), f"{vascusynth_path} is not a valid VascuSynth path"
 
 		output_path = Path(self.config.get_config('output/root_directory')) / f"{self.seed:04}"
