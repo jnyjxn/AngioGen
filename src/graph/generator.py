@@ -19,12 +19,12 @@ def generate_networks(cfg, overwrite=False):
 	except Exception as e:
 		[ray.cancel(process) for process in futures]
 		print(e)
-    except KeyboardInterrupt as k:
-        [ray.cancel(process) for process in futures]
-        try:
-            sys.exit(k)
-        except SystemExit:
-            os._exit(k)
+	except KeyboardInterrupt as k:
+		[ray.cancel(process) for process in futures]
+		try:
+			sys.exit(k)
+		except SystemExit:
+			os._exit(k)
 
 def initialise_ray(cfg):
 	ray_config={

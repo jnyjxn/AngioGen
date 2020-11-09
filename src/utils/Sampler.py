@@ -85,43 +85,45 @@ class Sampler(Config):
             ppa_vals = np.linspace(config.get_config("rotational/ppa_start"),config.get_config("rotational/ppa_end"),num_capture_points)
             psa_vals = np.linspace(config.get_config("rotational/psa_start"),config.get_config("rotational/psa_end"),num_capture_points)
 
-            instructions.append({"reset": "table"})
+            instructions.append({"centre"})
 
             for i in range(num_capture_points):
                 instructions.append({
-                    "set": {
-                        "fluoroscope": {
-                            "ppa": f"{ppa_vals[i]:.4f}",
-                            "psa": f"{psa_vals[i]:.4f}"
-                        }
+                    "fluoroscope": {
+                        "ppa": ppa_vals[i],
+                        "psa": psa_vals[i]
                     }
                 })
                 instructions.append({"capture"})
 
         elif config.get_config("sequence"):
             num_capture_points = config.get_config("sequence/num_images")
-            instructions.append({"reset": "table"})
 
-            instructions.append({
-                "set": {
-                    "fluoroscope": {
-                        "ppa": config.get_config("sequence/ppa_start"),
-                        "psa": config.get_config("sequence/psa_start")
-                    }
-                }
-            })
-            instructions.append({"capture"})
+            ppa = config.get_config("sequence/ppa_start")
+            psa = config.get_config("sequence/psa_start")
+            delta_ppa = config.get_config("sequence/ppa_change")
+            delta_psa = config.get_config("sequence/psa_change")
 
-            for i in range(num_capture_points-1):
+            instructions.append({"centre"})
+
+            for i in range(num_capture_points):
                 instructions.append({
-                    "change": {
-                        "fluoroscope": {
-                            "ppa": config.get_config("sequence/ppa_change"),
-                            "psa": config.get_config("sequence/psa_change")
-                        }
+                    "fluoroscope": {
+                        "ppa": ppa,
+                        "psa": psa
                     }
                 })
                 instructions.append({"capture"})
+
+                ppa += delta_ppa
+                psa += delta_psa
+
+        elif config.get_config("imageset"):
+            for item in config.get_config("imageset"):
+                if type(item) is str:
+                    item = {item}
+
+                instructions.append(item)
 
         else:
             requested_instruction = list(config.get_config().keys())[0]

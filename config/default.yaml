@@ -130,12 +130,12 @@ patient:
             number_of_nodes:
                 distribution: uniform
                 dtype: int
-                min: 5
-                max: 50
+                min: 3
+                max: 6
             minimum_distance: 30
             closest_neighbours: 20
             axial_refinement: 50
-            resolution: 0.8 # As proportion of minimum vessel radius
+            resolution: 0.6 # As proportion of minimum vessel radius
         points:
             number: 100000
         voxels:
@@ -145,13 +145,13 @@ equipment:
     fluoroscope:
         name: GE OEC Elite Super C-Arm
         specifications:
-        source_to_image_distance: 1040
-        pixel_size:
-            x: 0.25
-            y: 0.25
-        image_dimensions: # in pixels
-            width: 1536
-            height: 1496
+            source_to_image_distance: 1040
+            pixel_size:
+                x: 0.25
+                y: 0.25
+            image_dimensions: # in pixels
+                width: 1536
+                height: 1496
 
 operation:
     protocol:
@@ -177,15 +177,37 @@ operation:
         #     distribution: uniform
         #     min: 0
         #     max: 20
-        sequence:
-            num_images: 4
-            ppa_start:
-                distribution: uniform
-                min: -120
-                max: 120
-            psa_start: 0
-            ppa_change: 5
-            psa_change: 0
+        # sequence:
+        #     num_images: 4
+        #     ppa_start:
+        #         distribution: uniform
+        #         min: -120
+        #         max: 120
+        #     psa_start: 0
+        #     ppa_change: 5
+        #     psa_change: 0
+        imageset:
+            - centre
+            - fluoroscope: 
+                ppa: 0
+                psa: 0
+            - capture
+            - fluoroscope:
+                ppa: 90
+                psa: 0
+            - capture
+            - fluoroscope:
+                ppa: 0
+                psa: 90
+            - capture
+    image_processing:
+        raw: {}
+        onet:
+        - crop:
+            aspect_ratio: 1
+        - resize:
+            keep_aspect_ratio: True
+            x: 224
 
 output:
     root_directory: output/testing
@@ -204,12 +226,4 @@ output:
         points: true
         voxels: true
         graph: false
-    image_processing:
-        raw: {}
-        onet:
-        - crop:
-            aspect_ratio: 1
-        - resize:
-            keep_aspect_ratio: True
-            x: 224
   

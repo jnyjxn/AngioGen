@@ -1,11 +1,9 @@
-import io
 from pathlib import Path
 from multiprocessing import Pool
-from contextlib import redirect_stdout, redirect_stderr
-
-from src.mesh.lib.MeshBuilder import MeshBuilder
+from src.three_d.lib.MeshBuilder import MeshBuilder
 
 def generate_meshes(cfg, overwrite=False):
+
 	root_dir = cfg.get_config("output/root_directory")
 	root_dir = Path(root_dir)
 
@@ -21,8 +19,6 @@ def generate_meshes(cfg, overwrite=False):
 	print(results)
 
 def generate_one_mesh(path, i, mesh_resolution):
-	stdout = io.StringIO()
-	with redirect_stdout(stdout), redirect_stderr(stdout):
-		builder = MeshBuilder(path, i, mesh_resolution)
-		obj = builder.get_one_mesh_obj()
-		builder.save_one_mesh(obj)
+	builder = MeshBuilder(path, i, mesh_resolution)
+	obj = builder.get_one_mesh_obj()
+	builder.save_one_mesh(obj)

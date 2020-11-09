@@ -1,8 +1,10 @@
 import sys
 import math
+import numpy as np
 
 try:
 	import bpy
+	import bmesh
 except ImportError:
 	pass
 	
@@ -154,7 +156,11 @@ class MeshBuilder(object):
 		objs = [ob for ob in bpy.context.scene.objects if ob.type in ('MESH','CAMERA','LIGHT')]
 		bpy.ops.object.delete({"selected_objects": objs})
 
-		output_ply_path, output_stl_path = self.path / f"{self.id:04}" / "mesh.ply", self.path / f"{self.id:04}" / "mesh.stl"
+		output_ply_path, output_stl_path, output_npz_path = (
+			self.path / f"{self.id:04}" / "mesh.ply", 
+			self.path / f"{self.id:04}" / "mesh.stl",
+			self.path / f"{self.id:04}" / "mesh.npz"
+		)
 
 		scene = bpy.context.scene
 		scene.collection.objects.link(obj)
@@ -163,6 +169,21 @@ class MeshBuilder(object):
 		bpy.context.view_layer.objects.active = obj
 
 		bpy.ops.object.convert()
+		
+		me = bpy.context.object.data
+		bm = bmesh.new()
+		bm.from_mesh(me)
+		bmesh.ops.triangulate(bm, faces=bm.faces[:])
+		bm.to_mesh(me)
+
+		verts = np.array([v.co for v in bm.verts])
+		faces = np.array([[me.loops[loop_index].vertex_index for loop_index in poly.loop_indices] for poly in me.polygons])
+
+		np.savez_compressed(
+			output_npz_path,
+			verts=verts,
+			faces=faces,
+		)
 		
 		bpy.ops.export_mesh.ply(filepath=str(output_ply_path),check_existing=False)
 		bpy.ops.export_mesh.stl(filepath=str(output_stl_path),check_existing=False,ascii=True)
