@@ -9,15 +9,9 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 
-import argparse
 import trimesh
 import numpy as np
-import os
-import pathlib
-import sys
-import torch
-from multiprocessing import Pool
-from functools import partial
+from pathlib import Path
 from scipy import ndimage
 
 from .triangle_hasher.triangle_hash import TriangleHash as _TriangleHash
@@ -25,34 +19,33 @@ from .libvoxelize.voxelize import voxelize_mesh_
 
 
 class MeshSampler(object):
-	def __init__(self,in_dir,n_proc=0,vox_out=None,points_out=None,resize=False,bbox_in_folder=None,bbox_padding=0,
-						rotate_xz=0, voxels_res=32, points_size=100000, points_uniform_ratio=1.):
-		input_files = pathlib.Path(in_dir).rglob('mesh.npz')
-
-		if n_proc != 0:
-			with Pool(n_proc) as p:
-				p.map(partial(self.process_path,
-					vox_out=vox_out,points_out=points_out,resize=resize,bbox_in_folder=bbox_in_folder,bbox_padding=bbox_padding,
-										rotate_xz=rotate_xz, voxels_res=voxels_res, points_size=points_size,points_uniform_ratio=points_uniform_ratio
-				), input_files)
-		else:
-			for p in input_files:
-				self.process_path(p,
-					vox_out=vox_out,points_out=points_out,resize=resize,bbox_in_folder=bbox_in_folder,bbox_padding=bbox_padding,
-					rotate_xz=rotate_xz, voxels_res=voxels_res, points_size=points_size,points_uniform_ratio=points_uniform_ratio
-				)
+	@classmethod
+	def sample(cls, path, get_voxels=True,get_points=True, points_size=100000, points_uniform_ratio=0.9, voxels_res=32, resize=True, overwrite=False):
+		points, occupancies, voxels = cls.get_points_and_voxels(
+			path, get_voxels=True,
+			get_points=True,
+			points_size=points_size, 
+			points_uniform_ratio=points_uniform_ratio,
+			voxels_res=voxels_res, 
+			resize=resize, 
+			overwrite=overwrite
+		)
+		cls.save_data(path, points=points, occupancies=occupancies, voxels=voxels)
 
 	@classmethod
-	def process_path(cls, in_path,vox_out=None,points_out=None,resize=False,bbox_in_folder=None,bbox_padding=0,
-						rotate_xz=0, voxels_res=32, points_size=100000, points_uniform_ratio=1.):
-		in_file = os.path.basename(in_path)
-		modelname = os.path.splitext(in_file)[0]
-		mesh = trimesh.load(str(in_path.resolve()), process=False)
+	def get_points_and_voxels(cls, path, get_voxels=True,get_points=True,resize=False,bbox_padding=0,
+						rotate_xz=0, voxels_res=32, points_size=100000, points_uniform_ratio=1.,overwrite=False):
+		if not overwrite and (path / "points.npz").exists():
+			get_points = False
+		
+		if not overwrite and (path / "model.binvox").exists():
+			get_voxels = False
 
+		if not get_points and not get_voxels: return (None, None, None)
+
+		mesh = trimesh.load(path / "mesh.ply",process=False)
 		if not mesh.is_watertight:
-			print('Warning: mesh %s is not watertight!'
-				  'Cannot create voxelization.' % modelname)
-			return
+			print(f"WARNING: Mesh {path}/mesh.ply is not watertight. Consider reducing mesh resolution.")
 
 		# Determine bounding box
 		if not resize:
@@ -60,16 +53,11 @@ class MeshSampler(object):
 			loc = np.zeros(3)
 			scale = 1.
 		else:
-			if bbox_in_folder is not None:
-				in_path_tmp = os.path.join(bbox_in_folder, modelname + '.off')
-				mesh_tmp = trimesh.load(in_path_tmp, process=False)
-				bbox = mesh_tmp.bounding_box.bounds
-			else:
-				bbox = mesh.bounding_box.bounds
+			bbox = mesh.bounding_box.bounds
 
 			# Compute location and scale
-			loc = (bbox[0] + bbox[1]) / 2
-			scale = (bbox[1] - bbox[0]).max() / (1 - bbox_padding)
+			loc = (bbox[0]+bbox[1])/2
+			scale = (bbox[1]-bbox[0]).max()/(1-bbox_padding)
 
 			# Transform input mesh
 			mesh.apply_translation(-loc)
@@ -77,23 +65,32 @@ class MeshSampler(object):
 
 			if rotate_xz != 0:
 				angle = rotate_xz / 180 * np.pi
-				R = trimesh.transformations.rotation_matrix(angle, [0, 1, 0])
+				R = trimesh.transformations.rotation_matrix(angle,[0,1,0])
 				mesh.apply_transform(R)
 
-		if vox_out is None:
-			vox_out = in_path.resolve().parent
-		if points_out is None:
-			points_out = in_path.resolve().parent
-
 		try:
-			cls.export_voxels(mesh, modelname, loc, scale, vox_out, voxels_res=voxels_res)
-			cls.export_points(mesh, modelname, loc, scale, points_out, points_size=points_size,points_uniform_ratio=points_uniform_ratio)
-		except e:
-			print(f"Error with item {in_path}: {e}")
-            
+			voxels = cls.get_voxels(mesh,loc,scale,voxels_res=voxels_res) if get_voxels else None
+			points, occupancies = cls.get_points(mesh,loc,scale,points_size=points_size,points_uniform_ratio=points_uniform_ratio) if get_points else (None, None)
+		except Exception as e:
+			print(f"Error with item {ply_file}: {e}")
+			return (None, None, None)
+
+		return points, occupancies, voxels
+
+	@classmethod
+	def save_data(cls, path, points=None, occupancies=None, voxels=None):
+		loc_data=np.array([0.,0.,0.])
+		scale_data=np.array(1.)
+
+		if voxels is not None:
+			with open(path / "model.binvox","wb") as f:
+				voxels.write(f)
+
+		if points is not None:
+			np.savez(path / "points.npz", points=points, occupancies=occupancies, loc=loc_data, scale=scale_data)
+
 	@classmethod
 	def get_voxels(cls, mesh, loc, scale, voxels_res=32):
-
 		res = voxels_res
 		voxels_occ = cls.voxelize_ray(mesh, res)
 
@@ -102,20 +99,6 @@ class MeshSampler(object):
 									  axis_order='xyz')
 
 		return voxels_out
-
-	@classmethod
-	def export_voxels(cls, mesh, modelname, loc, scale, vox_out, voxels_res=32, overwrite=False):
-		voxels = cls.get_voxels(mesh,loc, scale, voxels_res)
-
-		filename = os.path.join(vox_out, modelname + '.binvox')
-
-		if not overwrite and os.path.exists(filename):
-			print('Voxels already exist: %s' % filename)
-			return
-
-		print('Writing voxels: %s' % filename)
-		with open(filename, 'bw') as f:
-			voxels.write(f)
 
 	@classmethod
 	def get_points(cls, mesh, loc, scale, points_size=100000, points_uniform_ratio=1.,
@@ -136,24 +119,6 @@ class MeshSampler(object):
 
 		points = points.astype(np.float32)
 		return points, occupancies
-
-
-	@classmethod
-	def export_points(cls, mesh, modelname, loc, scale, points_out, points_size=100000, points_uniform_ratio=1.,
-							points_padding=0.1, points_sigma=0.01, overwrite=False):
-
-		filename = os.path.join(points_out, modelname + '.npz')
-
-		if not overwrite and os.path.exists(filename):
-			print('Points already exist: %s' % filename)
-			return
-
-		points, occupancies = cls.get_points(cls, mesh, loc, scale, points_size, points_uniform_ratio=1.,
-								points_padding=0.1, points_sigma=0.01)
-
-		print('Writing points: %s' % filename)
-		np.savez(filename, points=points, occupancies=occupancies,
-				 loc=loc, scale=scale)
 
 	@classmethod
 	def check_mesh_contains(cls, mesh, points, hash_resolution=512):
@@ -233,6 +198,10 @@ class MeshIntersector:
 	def __init__(self, mesh, resolution=512):
 		triangles = mesh.vertices[mesh.faces].astype(np.float64)
 		n_tri = triangles.shape[0]
+
+		# scale = (resolution - 1) / (mesh.bounds[1] - mesh.bounds[0])
+		# translate = 0.5 - scale * mesh.bounds[0]
+		# print(scale, translate)
 
 		self.resolution = resolution
 		self.bbox_min = triangles.reshape(3 * n_tri, 3).min(axis=0)

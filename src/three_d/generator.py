@@ -1,9 +1,28 @@
+import numpy as np
 from pathlib import Path
 from multiprocessing import Pool
-from src.three_d.lib.MeshBuilder import MeshBuilder
+import multiprocessing.pool as mpp
 
-def generate_meshes(cfg, overwrite=False):
 
+try:
+	from src.three_d.lib.MeshBuilder import MeshBuilder
+except ImportError:
+	"""
+	It means we are not running in Blender mode and hence don't need
+	this module
+	"""
+
+
+try:
+	from .lib.MeshSampler import MeshSampler
+	from utils.PoolIStarMap import istarmap
+except ImportError:
+	"""
+	It means we are running in Blender mode and hence don't need
+	this module
+	"""
+
+def generate_meshes(cfg, overwrite=False, debug=False):
 	root_dir = cfg.get_config("output/root_directory")
 	root_dir = Path(root_dir)
 
@@ -14,11 +33,46 @@ def generate_meshes(cfg, overwrite=False):
 	num_processes = cfg.get_config("meta/num_cpus")
 
 	with Pool(num_processes) as p:
-		results = p.starmap(generate_one_mesh, [(root_dir, seed, 0.8) for seed in seeds])
+		results = p.starmap(generate_one_mesh, [(root_dir, seed, 0.8, overwrite) for seed in seeds])
 
-	print(results)
+def generate_one_mesh(path, i, mesh_resolution, overwrite=False):
+	if not overwrite:
+		mesh_path = path / f"{i:04}" / "mesh.ply"
+		if mesh_path.exists():
+			print("Export completed")
+			return
 
-def generate_one_mesh(path, i, mesh_resolution):
 	builder = MeshBuilder(path, i, mesh_resolution)
 	obj = builder.get_one_mesh_obj()
 	builder.save_one_mesh(obj)
+
+
+def generate_samplesets(cfg, overwrite=False, debug=False):
+	root_dir = cfg.get_config("output/root_directory")
+	root_dir = Path(root_dir)
+
+	points_size = cfg.get_config("patient/blood_vessels/points/number")
+	points_uniform_ratio = cfg.get_config("patient/blood_vessels/points/uniform_ratio")
+	voxels_res = cfg.get_config("patient/blood_vessels/voxels/resolution")
+
+	num_processes = cfg.get_config("meta/num_cpus")
+	mpp.Pool.istarmap = istarmap
+
+	from tqdm import tqdm
+
+	with Pool(num_processes) as p:
+		iterable = [(item.parents[0], points_size, points_uniform_ratio, voxels_res, overwrite) for item in root_dir.rglob("**/*.ply")]
+		for _ in tqdm(p.istarmap(generate_one_sampleset, iterable),
+						   total=len(iterable)):
+			pass
+
+def generate_one_sampleset(path, points_size, points_uniform_ratio, voxels_res, overwrite=False):
+	MeshSampler.sample(
+		path, 
+		get_voxels=True,
+		get_points=True, 
+		points_size=points_size, 
+		points_uniform_ratio=points_uniform_ratio, 
+		voxels_res=voxels_res, 
+		overwrite=overwrite
+	)

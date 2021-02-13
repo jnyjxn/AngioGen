@@ -8,20 +8,30 @@ from utils import get_image_operations
 
 class ImageBuilder(object):
 	@classmethod
-	def generate_one_imageset(cls, cfg, seed):
+	def generate_one_imageset(cls, cfg, seed, overwrite=False):
 		root_dir = cfg.get_config("output/root_directory")
 		root_dir = Path(root_dir)
+		out_dir = root_dir / f"{seed:04}" / "images"
 
 		image_operations = get_image_operations(cfg)
 		mesh_filepath = root_dir / f"{seed:04}" / "mesh.npz"
 		mesh = cls.load_mesh(mesh_filepath)
+
+		if not overwrite:
+			everything_exists = True
+			for item in image_operations:
+				for sub_item in ["images.npy", "depths.npy", "matrices.npz"]:
+					if not (out_dir / item / sub_item).exists():
+						everything_exists = False
+
+			if everything_exists:
+				return True
 
 		image_cfg = cfg.generate(seed=seed)
 		renderer = Renderer(image_cfg)
 		raw_images, raw_depths, raw_matrices = renderer.generate_data(mesh)
 
 		processed_images = cls.process_images(raw_images, raw_depths, raw_matrices, image_operations)
-		out_dir = root_dir / f"{seed:04}" / "images"
 
 		for imageset_name, imageset_data in processed_images.items():
 			imageset_images, imageset_depths, imageset_matrices = imageset_data

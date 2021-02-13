@@ -71,10 +71,14 @@ class Renderer(object):
 		)
 
 	def get_image(self):
-		image_rgb, depth = self.renderer.render(self.scene)
+		image, depth = self.renderer.render(self.scene)
 
 		# Convert to single channel (greyscale)
-		image = np.array(image_rgb[:, :, 0])*.299 + np.array(image_rgb[:, :, 1])*.587 + np.array(image_rgb[:, :, 2])*.114
+
+		greyscale = False
+		if greyscale:
+			image = np.array(image[:, :, 0])*.299 + np.array(image[:, :, 1])*.587 + np.array(image[:, :, 2])*.114
+
 		return image.astype(np.uint8), depth
 
 	def generate_data(self, mesh):

@@ -3,6 +3,7 @@ import sys
 import ray
 import time
 from tqdm import tqdm
+from pathlib import Path
 
 from .lib.NetworkBuilder import NetworkBuilder
 
@@ -13,7 +14,7 @@ def generate_networks(cfg, overwrite=False):
 	initialise_ray(cfg)
 
 	try:
-		futures = [generate_one_network.remote(cfg, seed) for seed in seeds]
+		futures = [generate_one_network.remote(cfg, seed, overwrite) for seed in seeds]
 		
 		wait_for_completion(futures, len(seeds))
 	except Exception as e:
@@ -37,8 +38,14 @@ def initialise_ray(cfg):
 	ray.init(**{**ray_config, **additional_ray_config})
 
 @ray.remote
-def generate_one_network(cfg, seed):
+def generate_one_network(cfg, seed, overwrite=False):
+	if not overwrite:
+		output_path = Path(cfg.get_config('output/root_directory')) / f"{seed:04}" / "network.swc"
+
+		if output_path.exists(): return NetworkBuilder.return_codes["SKIPPED_EXISTING_NETWORK"]
+	
 	network_cfg = cfg.generate(seed=seed)
+
 	generator = NetworkBuilder(network_cfg, seed)
 	try:
 		result = generator.run()

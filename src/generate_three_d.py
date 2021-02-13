@@ -14,11 +14,12 @@ try:
 	from src.three_d.generator import generate_meshes
 except ImportError:
 	from utils import get_config
+	from three_d.generator import generate_samplesets
 
-def run_blender_process(n_meshes, config_path, overwrite=False):
+def run_blender_process(n_meshes, config_path, overwrite=False, debug=False):
 	# TODO: Make this not hard-coded
-	
-	blender_exe = '/home/localjja17/jja17/CoronaryVesselGeneration/AngioGenAppNew/external/blender-2.90.1-linux64/blender'
+
+	blender_exe = './src/external/blender-2.91.2-linux64/blender'
 	blender_process_args = [
 		'--background',
 		'-P',
@@ -43,7 +44,7 @@ def run_blender_process(n_meshes, config_path, overwrite=False):
 		if "Export completed" in line:
 			progress_bar.update(1)
 
-def main(config_path, overwrite=False, blendermode=False):
+def main(config_path, overwrite=False, blendermode=False, debug=False):
 	default_config_path = "config/default.yaml"
 	cfg = get_config(config_path, default_config_path)
 
@@ -51,18 +52,21 @@ def main(config_path, overwrite=False, blendermode=False):
 	# so we open a subprocess that runs generate_meshes via Blender
 	if not blendermode:
 		n_meshes = 1 + int(cfg.get_config("meta/random_seeds/end")) - int(cfg.get_config("meta/random_seeds/start"))
-		run_blender_process(n_meshes, config_path, overwrite)
+		print("Generating Meshes")
+		run_blender_process(n_meshes, config_path, overwrite, debug)
 	else:
-		generate_meshes(cfg, overwrite=overwrite)
+		generate_meshes(cfg, overwrite, debug)
 		return
 
-	print("Finished successfully")
+	print("Generating Samples")
+	generate_samplesets(cfg, overwrite, debug)
 
 if __name__ == "__main__":	
 	parser = argparse.ArgumentParser(description='Turn a set of SWC files into mesh files.')
 	parser.add_argument('config_path', type=str, help='Path to the generator config file.')
 	parser.add_argument('-o','--overwrite', action='store_true', help='Overwrite existing files.')
 	parser.add_argument('--blendermode', action='store_true', help='Used by the automatic Blender script only.')
+	parser.add_argument('-d','--debug', action='store_true', help='Show output of script processes.')
 
 	try:
 		python_commands_index = sys.argv.index("--")
@@ -72,4 +76,4 @@ if __name__ == "__main__":
 
 	args, unknown = parser.parse_known_args(parse_arguments)
 
-	main(args.config_path, args.overwrite, args.blendermode)
+	main(args.config_path, args.overwrite, args.blendermode, args.debug)
