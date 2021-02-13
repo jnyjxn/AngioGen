@@ -50,13 +50,13 @@ def main(config_path, overwrite=False, blendermode=False, debug=False):
 
 	# generate_meshes can only be called via Blender. If this is a user-initiated script, it will be in Python mode,
 	# so we open a subprocess that runs generate_meshes via Blender
-	if not blendermode:
-		n_meshes = 1 + int(cfg.get_config("meta/random_seeds/end")) - int(cfg.get_config("meta/random_seeds/start"))
-		print("Generating Meshes")
-		run_blender_process(n_meshes, config_path, overwrite, debug)
-	else:
+	if blendermode:
 		generate_meshes(cfg, overwrite, debug)
 		return
+
+	n_meshes = 1 + int(cfg.get_config("meta/random_seeds/end")) - int(cfg.get_config("meta/random_seeds/start"))
+	print("Generating Meshes")
+	run_blender_process(n_meshes, config_path, overwrite, debug)
 
 	print("Generating Samples")
 	generate_samplesets(cfg, overwrite, debug)

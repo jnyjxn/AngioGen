@@ -7,7 +7,6 @@ except ImportError:
 	"""
 	This import will fail when running via Blender for the generate_three_d script.
 	"""
-	pass
 
 def update_recursive(dict1, dict2):
 	''' Update two config dictionaries recursively.

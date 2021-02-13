@@ -1,5 +1,4 @@
 *
 !__init__.py
-!triangle_hash.cpp
 !triangle_hash.pyx
 !.gitignore
