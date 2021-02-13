@@ -155,7 +155,7 @@ equipment:
                 height: 1496
 
 operation:
-    protocol:
+    # protocol:
         # rotational:
         #   sequence_timespan: # in seconds
         #     distribution: uniform
@@ -187,20 +187,20 @@ operation:
         #     psa_start: 0
         #     ppa_change: 5
         #     psa_change: 0
-        imageset:
-            - centre
-            - fluoroscope: 
-                ppa: 0
-                psa: 0
-            - capture
-            - fluoroscope:
-                ppa: 90
-                psa: 0
-            - capture
-            - fluoroscope:
-                ppa: 0
-                psa: 90
-            - capture
+        # imageset:
+        #     - centre
+        #     - fluoroscope: 
+        #         ppa: 0
+        #         psa: 0
+        #     - capture
+        #     - fluoroscope:
+        #         ppa: 90
+        #         psa: 0
+        #     - capture
+        #     - fluoroscope:
+        #         ppa: 0
+        #         psa: 90
+        #     - capture
     image_processing:
         raw: {}
         onet:

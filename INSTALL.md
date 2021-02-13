@@ -10,6 +10,20 @@ cd ./AngioGen
 pip install -r requirements.txt
 ```
 
+## Installing VascuSynth
+1. Move to the VascuSynth folder
+```
+cd src/graph/lib/VascuSynth/bin
+```
+2. Run CMake
+```
+cmake ..
+```
+3. Compile
+```
+make
+```
+
 ## Installing Blender
 ### Downloading Blender
 1. Download Blender for free from https://www.blender.org/ and place the entire folder in `src/external`.

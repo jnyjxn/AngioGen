@@ -1,0 +1,3 @@
+./external/*
+./config/*
+!./config/default.yaml

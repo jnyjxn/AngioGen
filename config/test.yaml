@@ -1,0 +1,26 @@
+meta:
+        num_cpus: 48
+operation:
+        protocol:
+                sequence:
+                        num_images: 3
+                        ppa_start:
+                                distribution: uniform
+                                min: -120
+                                max: 120
+                        psa_start:
+                                distribution: uniform
+                                min: -20
+                                max: 20
+                        ppa_change: 10
+                        psa_change: 0
+        image_processing:
+                raw: {}
+                onet:
+                        - crop:
+                                aspect_ratio: 1
+                        - resize:
+                                keep_aspect_ratio: True
+                                x: 256
+output:
+        root_directory: output/testing
