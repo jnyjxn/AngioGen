@@ -138,6 +138,7 @@ patient:
             resolution: 0.6 # As proportion of minimum vessel radius
         points:
             number: 100000
+            uniform_ratio: 0.9
         voxels:
             resolution: 32
 
