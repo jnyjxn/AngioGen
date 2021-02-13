@@ -9,6 +9,10 @@ git clone https://github.com/jnyjxn/AngioGen.git
 cd ./AngioGen
 pip install -r requirements.txt
 ```
+3. Run setup
+```
+python setup.py build_ext --inplace
+```
 
 ## Installing VascuSynth
 1. Move to the VascuSynth folder
