@@ -1,4 +1,14 @@
 # Installation Instructions
+## Installing AngioGen
+1. Clone the repository
+```
+git clone https://github.com/jnyjxn/AngioGen.git
+```
+2. Install the requirements
+```
+cd ./AngioGen
+pip install -r requirements.txt
+```
 
 ## Installing Blender
 ### Downloading Blender
