@@ -1,3 +1,5 @@
-voxelize.c
-voxelize.html
-build
+*
+!__init__.py
+!tribox.h
+!voxelize.pyx
+!.gitignore

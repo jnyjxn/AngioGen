@@ -1,0 +1,6 @@
+src/external/*
+config/*
+!config/default.yaml
+output
+
+*__pycache__
