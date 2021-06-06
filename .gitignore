@@ -2,5 +2,6 @@ src/external/*
 config/*
 !config/default.yaml
 output
+build
 
 *__pycache__

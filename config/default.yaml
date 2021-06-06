@@ -5,8 +5,10 @@ meta:
         start: 1
         end: 100
     num_cpus: 24
-  
+    renderer: optical
+
 patient:
+    use_existing_meshes: False
     identifier: &id random_seed.5
     body:
         size:
@@ -135,7 +137,7 @@ patient:
             minimum_distance: 30
             closest_neighbours: 20
             axial_refinement: 50
-            resolution: 0.6 # As proportion of minimum vessel radius
+            resolution: 0.5 # As proportion of minimum vessel radius
         points:
             number: 100000
             uniform_ratio: 0.9
@@ -153,6 +155,8 @@ equipment:
             image_dimensions: # in pixels
                 width: 1536
                 height: 1496
+            beam_energy: 120
+            image_channels: 1
 
 operation:
     # protocol:
@@ -224,6 +228,8 @@ output:
         - depth
         - sample
         - matrix
+        images_as_png: true
+        images_as_numpy: true
         points: true
         voxels: true
         graph: false

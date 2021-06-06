@@ -91,6 +91,7 @@ class MeshBuilder(object):
 		scene = bpy.context.scene
 		mball = bpy.data.metaballs.new(f'vessel{self.id}')
 		mball.resolution = self.mesh_resolution
+		
 		mball.render_resolution = self.mesh_resolution
 		obj = bpy.data.objects.new(f'Vessel{self.id}',mball)
 		# scene.collection.objects.link(obj)

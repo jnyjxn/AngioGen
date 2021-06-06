@@ -1,5 +1,4 @@
 import io
-import pyrender
 import numpy as np
 from tqdm import tqdm
 from multiprocessing import Pool

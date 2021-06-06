@@ -1,9 +1,10 @@
 import pyrender
 import numpy as np
+from PIL import Image
 from pathlib import Path
 from copy import deepcopy
 
-from .Renderer import Renderer
+from .Renderer import OpticalRenderer, XRayRenderer
 from utils import get_image_operations
 
 class ImageBuilder(object):
@@ -14,8 +15,9 @@ class ImageBuilder(object):
 		out_dir = root_dir / f"{seed:04}" / "images"
 
 		image_operations = get_image_operations(cfg)
-		mesh_filepath = root_dir / f"{seed:04}" / "mesh.npz"
-		mesh = cls.load_mesh(mesh_filepath)
+		mesh_npz_filepath = root_dir / f"{seed:04}" / "mesh.npz"
+		mesh_stl_filepath = root_dir / f"{seed:04}" / "mesh.stl"
+		mesh = cls.load_mesh(mesh_npz_filepath)
 
 		if not overwrite:
 			everything_exists = True
@@ -28,10 +30,21 @@ class ImageBuilder(object):
 				return True
 
 		image_cfg = cfg.generate(seed=seed)
-		renderer = Renderer(image_cfg)
-		raw_images, raw_depths, raw_matrices = renderer.generate_data(mesh)
+
+		render_type = cfg.get_config("meta/renderer")
+
+		if render_type == "optical":
+			renderer = OpticalRenderer(image_cfg)
+		elif render_type == "xray":
+			renderer = XRayRenderer(image_cfg)
+		else:
+			raise NotImplementedError(f"Value '{render_type}' for config 'meta/renderer' is not valid. Must be one of: 'optical', 'xray'")
+
+		raw_images, raw_depths, raw_matrices = renderer.generate_data(mesh=mesh, stl_filepath=str(mesh_stl_filepath.resolve()))
 
 		processed_images = cls.process_images(raw_images, raw_depths, raw_matrices, image_operations)
+
+		save_as_png = cfg.get_config("output/save/images_as_png")
 
 		for imageset_name, imageset_data in processed_images.items():
 			imageset_images, imageset_depths, imageset_matrices = imageset_data
@@ -42,6 +55,21 @@ class ImageBuilder(object):
 			np.save(save_to / "images.npy", imageset_images)
 			np.save(save_to / "depths.npy", imageset_depths)
 			np.savez_compressed(save_to / "matrices.npz", **imageset_matrices)
+
+			if save_as_png:
+				png_folder = save_to / "images"
+				png_folder.mkdir(parents=True, exist_ok=True)
+
+				for i in range(imageset_images.shape[2]):
+					arr = imageset_images[:,:,i]
+					rgb_image = np.zeros((arr.shape[0], arr.shape[1], 3))
+					rgb_image[:, :, 0] = arr
+					rgb_image[:, :, 1] = arr
+					rgb_image[:, :, 2] = arr
+
+					im = Image.fromarray(rgb_image.astype(np.uint8))
+
+					im.save(png_folder / f"image_{i}.png")
 
 		return True
 

@@ -54,9 +54,10 @@ def main(config_path, overwrite=False, blendermode=False, debug=False):
 		generate_meshes(cfg, overwrite, debug)
 		return
 
-	n_meshes = 1 + int(cfg.get_config("meta/random_seeds/end")) - int(cfg.get_config("meta/random_seeds/start"))
-	print("Generating Meshes")
-	run_blender_process(n_meshes, config_path, overwrite, debug)
+	if not cfg.get_config("patient/use_existing_meshes"):
+		n_meshes = 1 + int(cfg.get_config("meta/random_seeds/end")) - int(cfg.get_config("meta/random_seeds/start"))
+		print("Generating Meshes")
+		run_blender_process(n_meshes, config_path, overwrite, debug)
 
 	print("Generating Samples")
 	generate_samplesets(cfg, overwrite, debug)
