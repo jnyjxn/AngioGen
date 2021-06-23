@@ -170,11 +170,11 @@ class OpticalRenderer(_Renderer):
 		return images, depths, matrices
 
 class XRayRenderer(_Renderer):
-	def __init__(self, cfg, show_debug=False):
+	def __init__(self, cfg, debug=False):
 		super().__init__()
 		self.config = cfg
-		self.show_debug = show_debug
-		if not self.show_debug:
+		self.debug = debug
+		if not self.debug:
 			self._redirect_output()
 
 		try:
@@ -187,7 +187,7 @@ class XRayRenderer(_Renderer):
 	def __del__(self):
 		self.gvxr.removePolygonMeshesFromSceneGraph()
 
-		if not self.show_debug:
+		if not self.debug:
 			self._restore_output()
 
 	def _init_gvxr(self):
@@ -217,7 +217,7 @@ class XRayRenderer(_Renderer):
 
 	def get_image(self, **kwargs):
 		image = np.array(self.gvxr.computeXRayImage())
-		depth = np.array(self.gvxr.computeLBuffer("mesh"))
+		depth = np.array(self.gvxr.computeLBuffer("Exported"))
 	
 		return image.astype(np.uint8), depth
 
@@ -225,7 +225,7 @@ class XRayRenderer(_Renderer):
 		cx, cy, cz = mesh.centroid
 		self.configuration["position"] = [-cx, -cy, -cz]
 
-		self.gvxr.moveToCenter("mesh")
+		self.gvxr.moveToCenter("Exported")
 
 	def orient_fluoroscope(self, protocol_item, **kwargs):
 		old_ppa_angle = self.configuration["angle"][0]
@@ -240,8 +240,8 @@ class XRayRenderer(_Renderer):
 		delta_ppa_angle = new_ppa_angle - old_ppa_angle
 		delta_psa_angle = new_psa_angle - old_psa_angle
 
-		self.gvxr.rotateNode("mesh", delta_ppa_angle, 1, 0, 0)
-		self.gvxr.rotateNode("mesh", delta_psa_angle, 0, 1, 0)
+		self.gvxr.rotateNode("Exported", delta_ppa_angle, 1, 0, 0)
+		self.gvxr.rotateNode("Exported", delta_psa_angle, 0, 1, 0)
 
 	def move_table(self, protocol_item, **kwargs):
 		old_table_x = self.configuration["position"][0]
@@ -263,8 +263,8 @@ class XRayRenderer(_Renderer):
 		self.gvxr.translateScene(delta_ppa_angle, delta_table_x, delta_table_y, delta_table_z)
 
 	def generate_data(self, stl_filepath, mesh, **kwargs):
-		self.gvxr.loadMeshFile("mesh", stl_filepath, "mm")
-		self.gvxr.setHU("mesh", 1000)
+		self.gvxr.loadSceneGraph(stl_filepath, "mm")
+		self.gvxr.setHU("Exported", 1000)
 
 		protocol = self.config.get_config("operation/protocol")
 

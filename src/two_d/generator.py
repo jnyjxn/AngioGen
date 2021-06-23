@@ -7,7 +7,7 @@ import multiprocessing.pool as mpp
 from .lib.ImageBuilder import ImageBuilder
 from utils.PoolIStarMap import istarmap
 
-def generate_images(cfg, overwrite=False):
+def generate_images(cfg, overwrite=False, debug=False):
 	seed_start, seed_end = cfg.get_config("meta/random_seeds/start"), cfg.get_config("meta/random_seeds/end")
 	seeds = range(seed_start, seed_end + 1)
 
@@ -15,7 +15,10 @@ def generate_images(cfg, overwrite=False):
 	mpp.Pool.istarmap = istarmap
 
 	with Pool(num_processes) as p:
-		iterable = [(cfg, seed, overwrite) for seed in seeds]
+		iterable = [(cfg, seed, overwrite, debug) for seed in seeds]
 		for _ in tqdm(p.istarmap(ImageBuilder.generate_one_imageset, iterable),
 						   total=len(iterable)):
 			pass
+
+	# for seed in seeds:
+	# 	ImageBuilder.generate_one_imageset(cfg, seed, overwrite)

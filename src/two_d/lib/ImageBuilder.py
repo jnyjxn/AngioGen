@@ -9,7 +9,7 @@ from utils import get_image_operations
 
 class ImageBuilder(object):
 	@classmethod
-	def generate_one_imageset(cls, cfg, seed, overwrite=False):
+	def generate_one_imageset(cls, cfg, seed, overwrite=False, debug=False):
 		root_dir = cfg.get_config("output/root_directory")
 		root_dir = Path(root_dir)
 		out_dir = root_dir / f"{seed:04}" / "images"
@@ -36,7 +36,7 @@ class ImageBuilder(object):
 		if render_type == "optical":
 			renderer = OpticalRenderer(image_cfg)
 		elif render_type == "xray":
-			renderer = XRayRenderer(image_cfg)
+			renderer = XRayRenderer(image_cfg, debug=debug)
 		else:
 			raise NotImplementedError(f"Value '{render_type}' for config 'meta/renderer' is not valid. Must be one of: 'optical', 'xray'")
 
