@@ -10,47 +10,8 @@ meta:
 patient:
     use_existing_meshes: False
     identifier: &id random_seed.5
-    body:
-        size:
-            width:
-                distribution: normal
-                mean: 800
-                std: 100
-                min: 500
-                max: 1100
-            depth:
-                distribution: normal
-                mean: 250
-                std: 50
-                min: 150
-                max: 450
-            height:
-                distribution: normal
-                mean: 1700
-                std: 70
-                min: 1200
-                max: 2100
 
     heart:
-        location: # Proportion of body size: (0 - 1)
-            x:
-                distribution: normal
-                mean: 0.5
-                std: 0.05
-                min: 0.3
-                max: 0.7
-            y:
-                distribution: normal
-                mean: 0.5
-                std: 0.05
-                min: 0.3
-                max: 0.7
-            z:
-                distribution: normal
-                mean: 0.3
-                std: 0.04
-                min: 0.2
-                max: 0.4
         size:
             width:
                 distribution: normal
@@ -143,6 +104,7 @@ patient:
             uniform_ratio: 0.9
         voxels:
             resolution: 32
+        normalise: True
 
 equipment:
     fluoroscope:

@@ -55,24 +55,27 @@ def generate_samplesets(cfg, overwrite=False, debug=False):
 	points_uniform_ratio = cfg.get_config("patient/blood_vessels/points/uniform_ratio")
 	voxels_res = cfg.get_config("patient/blood_vessels/voxels/resolution")
 
+	resize = cfg.get_config("patient/blood_vessels/normalise")
+
 	num_processes = cfg.get_config("meta/num_cpus")
 	mpp.Pool.istarmap = istarmap
 
 	from tqdm import tqdm
 
 	with Pool(num_processes) as p:
-		iterable = [(item.parents[0], points_size, points_uniform_ratio, voxels_res, overwrite) for item in root_dir.rglob("**/*.ply")]
+		iterable = [(item.parents[0], points_size, points_uniform_ratio, voxels_res, resize, overwrite) for item in root_dir.rglob("**/*.ply")]
 		for _ in tqdm(p.istarmap(generate_one_sampleset, iterable),
 						   total=len(iterable)):
 			pass
 
-def generate_one_sampleset(path, points_size, points_uniform_ratio, voxels_res, overwrite=False):
+def generate_one_sampleset(path, points_size, points_uniform_ratio, voxels_res, resize, overwrite=False):
 	MeshSampler.sample(
 		path, 
 		get_voxels=True,
 		get_points=True, 
 		points_size=points_size, 
 		points_uniform_ratio=points_uniform_ratio, 
-		voxels_res=voxels_res, 
+		voxels_res=voxels_res,
+		resize=resize,
 		overwrite=overwrite
 	)

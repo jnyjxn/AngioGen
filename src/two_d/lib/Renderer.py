@@ -241,7 +241,7 @@ class XRayRenderer(_Renderer):
 		delta_psa_angle = new_psa_angle - old_psa_angle
 
 		self.gvxr.rotateNode("mesh", delta_ppa_angle, 1, 0, 0)
-		# self.gvxr.rotateScene(delta_psa_angle, 0, 1, 0)
+		self.gvxr.rotateNode("mesh", delta_psa_angle, 0, 1, 0)
 
 	def move_table(self, protocol_item, **kwargs):
 		old_table_x = self.configuration["position"][0]
@@ -271,26 +271,3 @@ class XRayRenderer(_Renderer):
 		images, depths, matrices = self.perform_protocol(protocol, mesh=mesh)
 
 		return images, depths, matrices
-		# if not self.show_debug:
-		# 	self._redirect_output()
-
-		# 	self.gvxr.createWindow(1)
-
-		# 	self.gvxr.setSourcePosition(-0.5*self.SID,  0.0, 0.0, "mm")
-		# 	self.gvxr.usePointSource()
-		# 	self.gvxr.setMonoChromatic(self.beam_energy, "keV", 1000)
-		# 	self.gvxr.setDetectorPosition(0.5*self.SID, 0.0, 0.0, "mm")
-		# 	self.gvxr.setDetectorUpVector(0, 0, -1)
-		# 	self.gvxr.setDetectorNumberOfPixels(self.image_size[0], self.image_size[1])
-		# 	self.gvxr.setDetectorPixelSize(self.pixel_size[0], self.pixel_size[1], "mm")
-
-		# 	self.gvxr.loadMeshFile("mesh", stl_filepath, "mm")
-		# 	self.gvxr.setHU("mesh", 1000)
-		# 	self.gvxr.disableArtefactFiltering()
-
-		# 	x_ray_image = self.gvxr.computeXRayImage()
-
-		# 	self.gvxr.removePolygonMeshesFromSceneGraph()
-
-		# 	if not self.show_debug:
-		# 		self._restore_output()
