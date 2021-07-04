@@ -148,7 +148,7 @@ class MeshBuilder(object):
 		return obj
 
 	def get_one_mesh_obj(self):
-		swc_filepath = self.path / f"{self.id:04}" / "network.swc"
+		swc_filepath = self.path / f"{self.id}" / "network.swc"
 		swc_data = self.read_segments_from_file(swc_filepath)
 
 		return self.build_vessel_from_segments(swc_data)
@@ -158,9 +158,9 @@ class MeshBuilder(object):
 		bpy.ops.object.delete({"selected_objects": objs})
 
 		output_ply_path, output_stl_path, output_npz_path = (
-			self.path / f"{self.id:04}" / "mesh.ply", 
-			self.path / f"{self.id:04}" / "mesh.stl",
-			self.path / f"{self.id:04}" / "mesh.npz"
+			self.path / f"{self.id}" / "mesh.ply", 
+			self.path / f"{self.id}" / "mesh.stl",
+			self.path / f"{self.id}" / "mesh.npz"
 		)
 
 		scene = bpy.context.scene

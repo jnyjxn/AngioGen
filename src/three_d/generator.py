@@ -28,21 +28,25 @@ def generate_meshes(cfg, overwrite=False, debug=False):
 
 	seed_start, seed_end = cfg.get_config("meta/random_seeds/start"), cfg.get_config("meta/random_seeds/end")
 	seeds = range(seed_start, seed_end + 1)
+	pad = cfg.get_config("output/pad_zeros_to")
 
 	mesh_resolution = cfg.get_config("patient/blood_vessels/mesh/resolution")
 	num_processes = cfg.get_config("meta/num_cpus")
 
 	with Pool(num_processes) as p:
-		results = p.starmap(generate_one_mesh, [(root_dir, seed, 0.8, overwrite) for seed in seeds])
+		results = p.starmap(generate_one_mesh, [(root_dir, f"{seed:0{pad}}", 0.8, overwrite) for seed in seeds])
 
-def generate_one_mesh(path, i, mesh_resolution, overwrite=False):
+def generate_one_mesh(path, mesh_id, mesh_resolution, overwrite=False):
 	if not overwrite:
-		mesh_path = path / f"{i:04}" / "mesh.ply"
+		mesh_path = Path(path / mesh_id / "mesh.ply")
 		if mesh_path.exists():
 			print("Export completed")
 			return
 
-	builder = MeshBuilder(path, i, mesh_resolution)
+
+	print("Building")
+
+	builder = MeshBuilder(path, mesh_id, mesh_resolution)
 	obj = builder.get_one_mesh_obj()
 	builder.save_one_mesh(obj)
 
@@ -51,8 +55,13 @@ def generate_samplesets(cfg, overwrite=False, debug=False):
 	root_dir = cfg.get_config("output/root_directory")
 	root_dir = Path(root_dir)
 
+	get_points = cfg.get_config("output/save/points")
+	get_pointcloud = cfg.get_config("output/save/pointcloud")
+	get_voxels = cfg.get_config("output/save/voxels")
+
 	points_size = cfg.get_config("patient/blood_vessels/points/number")
 	points_uniform_ratio = cfg.get_config("patient/blood_vessels/points/uniform_ratio")
+	pointcloud_size = cfg.get_config("patient/blood_vessels/pointcloud/number")
 	voxels_res = cfg.get_config("patient/blood_vessels/voxels/resolution")
 
 	resize = cfg.get_config("patient/blood_vessels/normalise")
@@ -63,18 +72,20 @@ def generate_samplesets(cfg, overwrite=False, debug=False):
 	from tqdm import tqdm
 
 	with Pool(num_processes) as p:
-		iterable = [(item.parents[0], points_size, points_uniform_ratio, voxels_res, resize, overwrite) for item in root_dir.rglob("**/*.ply")]
+		iterable = [(item.parents[0], get_points, get_pointcloud, get_voxels, points_size, points_uniform_ratio, pointcloud_size, voxels_res, resize, overwrite) for item in root_dir.rglob("**/*.ply")]
 		for _ in tqdm(p.istarmap(generate_one_sampleset, iterable),
 						   total=len(iterable)):
 			pass
 
-def generate_one_sampleset(path, points_size, points_uniform_ratio, voxels_res, resize, overwrite=False):
+def generate_one_sampleset(path, get_points, get_pointcloud, get_voxels, points_size, points_uniform_ratio, pointcloud_size, voxels_res, resize, overwrite=False):
 	MeshSampler.sample(
 		path, 
-		get_voxels=True,
-		get_points=True, 
+		get_points=get_points, 
+		get_pointcloud=get_pointcloud, 
+		get_voxels=get_voxels,
 		points_size=points_size, 
-		points_uniform_ratio=points_uniform_ratio, 
+		points_uniform_ratio=points_uniform_ratio,
+		pointcloud_size=pointcloud_size,
 		voxels_res=voxels_res,
 		resize=resize,
 		overwrite=overwrite

@@ -20,28 +20,34 @@ from .libvoxelize.voxelize import voxelize_mesh_
 
 class MeshSampler(object):
 	@classmethod
-	def sample(cls, path, get_voxels=True,get_points=True, points_size=100000, points_uniform_ratio=0.9, voxels_res=32, resize=True, overwrite=False):
-		points, occupancies, voxels = cls.get_points_and_voxels(
-			path, get_voxels=True,
-			get_points=True,
+	def sample(cls, path, get_points=True, get_pointcloud=True, get_voxels=True, points_size=100000, points_uniform_ratio=0.9, pointcloud_size=2048, voxels_res=32, resize=True, overwrite=False):
+		points, occupancies, pointcloud, voxels = cls.get_points_and_voxels(
+			path, 
+			get_points=get_points,
+			get_pointcloud=get_pointcloud,
+			get_voxels=get_voxels,
 			points_size=points_size, 
 			points_uniform_ratio=points_uniform_ratio,
+			pointcloud_size=pointcloud_size,
 			voxels_res=voxels_res, 
 			resize=resize, 
 			overwrite=overwrite
 		)
-		cls.save_data(path, points=points, occupancies=occupancies, voxels=voxels)
+		cls.save_data(path, points=points, occupancies=occupancies, pointcloud=pointcloud, voxels=voxels)
 
 	@classmethod
-	def get_points_and_voxels(cls, path, get_voxels=True,get_points=True,resize=False,bbox_padding=0,
-						rotate_xz=0, voxels_res=32, points_size=100000, points_uniform_ratio=1.,overwrite=False):
+	def get_points_and_voxels(cls, path, get_points=True, get_pointcloud=True, get_voxels=True,resize=False,bbox_padding=0,
+						rotate_xz=0, voxels_res=32, points_size=100000, points_uniform_ratio=1., pointcloud_size=2048, overwrite=False):
 		if not overwrite and (path / "points.npz").exists():
 			get_points = False
 		
+		if not overwrite and (path / "pointcloud.npy").exists():
+			get_pointcloud = False
+
 		if not overwrite and (path / "model.binvox").exists():
 			get_voxels = False
 
-		if not get_points and not get_voxels: return (None, None, None)
+		if not get_points and not get_pointcloud and not get_voxels: return (None, None, None, None)
 
 		mesh = trimesh.load(path / "mesh.ply",process=False)
 		if not mesh.is_watertight:
@@ -71,14 +77,15 @@ class MeshSampler(object):
 		try:
 			voxels = cls.get_voxels(mesh,loc,scale,voxels_res=voxels_res) if get_voxels else None
 			points, occupancies = cls.get_points(mesh,loc,scale,points_size=points_size,points_uniform_ratio=points_uniform_ratio) if get_points else (None, None)
+			pointcloud = cls.get_pointcloud(mesh, pointcloud_size) if get_pointcloud else None
 		except Exception as e:
 			print(f"Error with item {ply_file}: {e}")
-			return (None, None, None)
+			return (None, None, None, None)
 
-		return points, occupancies, voxels
+		return points, occupancies, pointcloud, voxels
 
 	@classmethod
-	def save_data(cls, path, points=None, occupancies=None, voxels=None):
+	def save_data(cls, path, points=None, occupancies=None, pointcloud=None, voxels=None):
 		loc_data=np.array([0.,0.,0.])
 		scale_data=np.array(1.)
 
@@ -88,6 +95,9 @@ class MeshSampler(object):
 
 		if points is not None:
 			np.savez(path / "points.npz", points=points, occupancies=occupancies, loc=loc_data, scale=scale_data)
+		
+		if pointcloud is not None:
+			np.save(path / "pointcloud.npy", pointcloud)
 
 	@classmethod
 	def get_voxels(cls, mesh, loc, scale, voxels_res=32):
@@ -119,6 +129,10 @@ class MeshSampler(object):
 
 		points = points.astype(np.float32)
 		return points, occupancies
+
+	@classmethod
+	def get_pointcloud(cls, mesh, pointcloud_size=2048):
+		return mesh.sample(pointcloud_size)
 
 	@classmethod
 	def check_mesh_contains(cls, mesh, points, hash_resolution=512):

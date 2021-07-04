@@ -18,7 +18,8 @@ class NetworkBuilder(object):
 		vascusynth_path = (Path(__file__) / '../VascuSynth/bin/VascuSynth').resolve()
 		assert vascusynth_path.exists(), f"{vascusynth_path} is not a valid VascuSynth path"
 
-		output_path = Path(self.config.get_config('output/root_directory')) / f"{self.seed:04}"
+		pad = self.config.get_config('output/pad_zeros_to')
+		output_path = Path(self.config.get_config('output/root_directory')) / f"{self.seed:0{pad}}"
 		output_path.mkdir(parents=True, exist_ok=True)
 		output_path /= "network.swc"
 

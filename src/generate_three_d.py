@@ -33,8 +33,10 @@ def run_blender_process(n_meshes, config_path, overwrite=False, debug=False):
 	
 	from tqdm import tqdm
 	progress_bar = tqdm(total=n_meshes)
+
+	stdout = None if debug else subprocess.PIPE
 	
-	proc = subprocess.Popen(process_string, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+	proc = subprocess.Popen(process_string, shell=True, stdout=stdout, stderr=subprocess.STDOUT)
 	
 	while True:
 		line = proc.stdout.readline().decode("utf-8")

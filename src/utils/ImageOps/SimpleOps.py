@@ -2,6 +2,7 @@ import copy
 import numpy as np
 import skimage.transform
 
+from warnings import warn
 from PIL import Image
 
 from ..MatrixCalculator import MatrixCalculator
@@ -82,6 +83,11 @@ def crop(image, depth, matrix, **config):
 		depth = depth.reshape(initial_image_width,initial_image_height,-1)
 
 	depth = depth[from_y:to_y,from_x:to_x,:]
+
+	depth_non_zero = depth[np.nonzero(depth)]
+
+	if depth_non_zero.size == 0:
+		warn("Image is empty. Continuing anyway...", RuntimeWarning)
 
 	if im_was_flat:
 		depth = np.squeeze(depth)
@@ -174,11 +180,18 @@ def resize(image, depth, matrix, **config):
 	if dpt_was_flat:
 		depth = depth.reshape(initial_image_data_width,initial_image_data_height,-1)
 
-	min_before = depth[np.nonzero(depth)].min()
+	depth_non_zero = depth[np.nonzero(depth)]
+
+	if depth_non_zero.size == 0:
+		warn("Image is empty. Continuing anyway...", RuntimeWarning)
+
+	min_before = 0 if depth_non_zero.size == 0 else depth[np.nonzero(depth)].min()
 	image_max_before = depth.max()
 	depth = skimage.transform.resize(depth, (y,x,depth.shape[2]), order=interpolation_order)
 	image_max_after = depth.max()
-	depth *= image_max_before/image_max_after
+
+	if image_max_after != 0:
+		depth *= image_max_before/image_max_after
 
 	depth[depth < min_before] = 0
 

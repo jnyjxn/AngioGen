@@ -102,6 +102,8 @@ patient:
         points:
             number: 100000
             uniform_ratio: 0.9
+        pointcloud:
+            number: 2048
         voxels:
             resolution: 32
         normalise: True
@@ -117,7 +119,7 @@ equipment:
             image_dimensions: # in pixels
                 width: 1536
                 height: 1496
-            beam_energy: 120
+            beam_energy: 150
             image_channels: 1
 
 operation:
@@ -178,21 +180,21 @@ operation:
 
 output:
     root_directory: output/testing
+    pad_zeros_to: 5
     save:
         shape:
         - swc
         - ply
-        - "off"
         - stl
         image:
         - image
         - mask
         - depth
-        - sample
         - matrix
         images_as_png: true
         images_as_numpy: true
         points: true
+        pointcloud: true
         voxels: true
         graph: false
   

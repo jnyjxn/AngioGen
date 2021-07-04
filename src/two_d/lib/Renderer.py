@@ -109,6 +109,7 @@ class OpticalRenderer(_Renderer):
 		self.light = None
 		self.mesh = None
 		self.renderer = None
+		self.viewer = None
 
 		self.configuration = {
 			"angle": [0, 0],        #(Positioner Primary Angle, Positioner Secondary Angle)
@@ -126,7 +127,7 @@ class OpticalRenderer(_Renderer):
 				fy=self.SID/self.pixel_size[1],
 				cx=0.5*self.image_size[0],
 				cy=0.5*self.image_size[1],
-				zfar=100000000000000 # `Infinite` clipping
+				zfar=1e12 # `Infinite` clipping
 			), 
 			self.pose
 		)
@@ -135,6 +136,7 @@ class OpticalRenderer(_Renderer):
 		self.scene.set_pose(self.light, self.pose)
 		self.scene.set_pose(self.camera, self.pose)
 
+		# self.viewer = pyrender.Viewer(self.scene, viewport_size=self.image_size)
 		image, depth = self.renderer.render(self.scene)
 
 		# Convert to single channel (greyscale)
@@ -150,7 +152,7 @@ class OpticalRenderer(_Renderer):
 		self.configuration["position"] = [-cx, -cy, -cz]
 
 	def orient_fluoroscope(self, protocol_item, **kwargs):
-		self.configuration["angle"][0] = protocol_item["fluoroscope"].get("ppa", self.configuration["angle"][0])
+		self.configuration["angle"][0] = -protocol_item["fluoroscope"].get("ppa", self.configuration["angle"][0])
 		self.configuration["angle"][1] = protocol_item["fluoroscope"].get("psa", self.configuration["angle"][1])
 
 	def move_table(self, protocol_item, **kwargs):
@@ -193,10 +195,17 @@ class XRayRenderer(_Renderer):
 	def _init_gvxr(self):
 		self.gvxr.createWindow(1)
 
-		self.gvxr.setSourcePosition(-0.5*self.SID,  0.0, 0.0, "mm")
+		# NOTE: To obtain a like-for-like rendering wrt Optical render,
+		# 		replace below lines with the following and apply a horizontal flip to the 
+		#		result
+		#
+		# 		self.gvxr.setSourcePosition(0.0, -0.5*self.SID, 0.0, "mm")
+		# 		self.gvxr.setDetectorPosition(0.0,0.5*self.SID, 0.0, "mm")
+
+		self.gvxr.setSourcePosition(0.0, 0.5*self.SID, 0.0, "mm")
+		self.gvxr.setDetectorPosition(0.0, -0.5*self.SID, 0.0, "mm")
 		self.gvxr.usePointSource()
 		self.gvxr.setMonoChromatic(int(self.beam_energy), "keV", 1000)
-		self.gvxr.setDetectorPosition(0.5*self.SID, 0.0, 0.0, "mm")
 		self.gvxr.setDetectorUpVector(0, 0, -1)
 		self.gvxr.setDetectorNumberOfPixels(self.image_size[0], self.image_size[1])
 		self.gvxr.setDetectorPixelSize(self.pixel_size[0], self.pixel_size[1], "mm")
@@ -231,26 +240,30 @@ class XRayRenderer(_Renderer):
 		old_ppa_angle = self.configuration["angle"][0]
 		old_psa_angle = self.configuration["angle"][1]
 
-		new_ppa_angle = protocol_item["fluoroscope"].get("ppa", self.configuration["angle"][0])
+		new_ppa_angle = -protocol_item["fluoroscope"].get("ppa", self.configuration["angle"][0])
 		new_psa_angle = protocol_item["fluoroscope"].get("psa", self.configuration["angle"][1])
 
 		self.configuration["angle"][0] = new_ppa_angle
 		self.configuration["angle"][1] = new_psa_angle
 
-		delta_ppa_angle = new_ppa_angle - old_ppa_angle
-		delta_psa_angle = new_psa_angle - old_psa_angle
+		# Rotation is not commutative, so first undo any existing move in reverse order 
+		self.gvxr.rotateNode("Exported", -old_psa_angle, 1, 0, 0)
+		self.gvxr.rotateNode("Exported", -old_ppa_angle, 0, 0, 1)
 
-		self.gvxr.rotateNode("Exported", delta_ppa_angle, 1, 0, 0)
-		self.gvxr.rotateNode("Exported", delta_psa_angle, 0, 1, 0)
+		self.gvxr.rotateNode("Exported", new_ppa_angle, 0, 0, 1)
+		self.gvxr.rotateNode("Exported", new_psa_angle, 1, 0, 0)
+
+		# self.gvxr.displayScene()
+		# self.gvxr.renderLoop()
 
 	def move_table(self, protocol_item, **kwargs):
 		old_table_x = self.configuration["position"][0]
 		old_table_y = self.configuration["position"][1]
 		old_table_z = self.configuration["position"][2]
 
-		new_table_x = protocol_item["table"].get("ppa", self.configuration["position"][0])
-		new_table_y = protocol_item["table"].get("psa", self.configuration["position"][1])
-		new_table_z = protocol_item["table"].get("psa", self.configuration["position"][2])
+		new_table_x = protocol_item["table"].get("x", self.configuration["position"][0])
+		new_table_y = protocol_item["table"].get("y", self.configuration["position"][1])
+		new_table_z = protocol_item["table"].get("z", self.configuration["position"][2])
 
 		self.configuration["position"][0] = new_table_x
 		self.configuration["position"][1] = new_table_y
@@ -260,11 +273,12 @@ class XRayRenderer(_Renderer):
 		delta_table_y = new_table_y - old_table_y
 		delta_table_z = new_table_z - old_table_z
 
-		self.gvxr.translateScene(delta_ppa_angle, delta_table_x, delta_table_y, delta_table_z)
+		self.gvxr.translateScene(delta_table_x, delta_table_y, delta_table_z, "mm")
 
 	def generate_data(self, stl_filepath, mesh, **kwargs):
 		self.gvxr.loadSceneGraph(stl_filepath, "mm")
-		self.gvxr.setHU("Exported", 1000)
+		self.gvxr.setElement("Exported", "I")
+		# self.gvxr.setHU("Exported", 1000)
 
 		protocol = self.config.get_config("operation/protocol")
 

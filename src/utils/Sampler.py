@@ -82,8 +82,8 @@ class Sampler(Config):
         assert len(config.get_config()) == 1, f"Exactly one operation protocol must be specified (you have specified {', '.join(config.get_config().keys())})."
         if config.get_config("rotational"):
             num_capture_points = int(config.get_config("rotational/sequence_timespan")*config.get_config("rotational/framerate"))
-            ppa_vals = np.linspace(config.get_config("rotational/ppa_start"),config.get_config("rotational/ppa_end"),num_capture_points)
-            psa_vals = np.linspace(config.get_config("rotational/psa_start"),config.get_config("rotational/psa_end"),num_capture_points)
+            ppa_vals = np.linspace(config.get_config("rotational/ppa_start", 0),config.get_config("rotational/ppa_end", 0),num_capture_points)
+            psa_vals = np.linspace(config.get_config("rotational/psa_start", 0),config.get_config("rotational/psa_end", 0),num_capture_points)
 
             instructions.append({"centre"})
 

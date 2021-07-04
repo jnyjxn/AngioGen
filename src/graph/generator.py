@@ -30,6 +30,7 @@ def generate_networks(cfg, overwrite=False):
 def initialise_ray(cfg):
 	ray_config={
 		"num_cpus": cfg.get_config("meta/num_cpus"),
+		"object_store_memory": 10**9
 		}
 	additional_ray_config = {
 		"configure_logging": False
@@ -40,7 +41,8 @@ def initialise_ray(cfg):
 @ray.remote
 def generate_one_network(cfg, seed, overwrite=False):
 	if not overwrite:
-		output_path = Path(cfg.get_config('output/root_directory')) / f"{seed:04}" / "network.swc"
+		pad = cfg.get_config("output/pad_zeros_to")
+		output_path = Path(cfg.get_config('output/root_directory')) / f"{seed:0{pad}}" / "network.swc"
 
 		if output_path.exists(): return NetworkBuilder.return_codes["SKIPPED_EXISTING_NETWORK"]
 	

@@ -12,11 +12,13 @@ class ImageBuilder(object):
 	def generate_one_imageset(cls, cfg, seed, overwrite=False, debug=False):
 		root_dir = cfg.get_config("output/root_directory")
 		root_dir = Path(root_dir)
-		out_dir = root_dir / f"{seed:04}" / "images"
+		pad = cfg.get_config("output/pad_zeros_to")
+		out_dir = Path(cfg.get_config('output/root_directory')) / f"{seed:0{pad}}" / "images"
+		pad = cfg.get_config('output/pad_zeros_to')
 
 		image_operations = get_image_operations(cfg)
-		mesh_npz_filepath = root_dir / f"{seed:04}" / "mesh.npz"
-		mesh_stl_filepath = root_dir / f"{seed:04}" / "mesh.stl"
+		mesh_npz_filepath = root_dir / f"{seed:0{pad}}" / "mesh.npz"
+		mesh_stl_filepath = root_dir / f"{seed:0{pad}}" / "mesh.stl"
 		mesh = cls.load_mesh(mesh_npz_filepath)
 
 		if not overwrite:
