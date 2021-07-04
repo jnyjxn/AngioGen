@@ -1,14 +1,16 @@
 import argparse
 import numpy as np
-import pandas as pd
-from pyntcloud import PyntCloud
+import open3d as o3d
 
 parser = argparse.ArgumentParser(description='Visualise the generated pointcloud.')
-parser.add_argument('npz_file', type=str, help='Path to the points.npz file you want to visualise.')
+parser.add_argument('npy_file', type=str, help='Path to the pointcloud.npy file you want to visualise.')
 args = parser.parse_args()
 
-data = np.load(args.npz_file)
-column_values = ["x", "y", "z"]
+p = np.load(args.npy_file)
 
-df = pd.DataFrame(data = data,
-        columns = column_values) 
+print(p.shape)
+
+pcd = o3d.geometry.PointCloud()
+pcd.points = o3d.utility.Vector3dVector(p)
+pcd.paint_uniform_color([0, 0, 0])
+o3d.visualization.draw_geometries_with_editing([pcd])
