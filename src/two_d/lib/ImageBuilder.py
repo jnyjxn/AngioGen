@@ -1,3 +1,4 @@
+import trimesh
 import pyrender
 import numpy as np
 from PIL import Image
@@ -6,6 +7,32 @@ from copy import deepcopy
 
 from .Renderer import OpticalRenderer, XRayRenderer
 from utils import get_image_operations
+
+
+def save_np_to_pfm(np_array,filepath):
+	np_array = np_array.astype(np.float32)
+
+	color = None
+
+	if np_array.dtype.name != 'float32':
+		raise Exception('Image dtype must be float32.')
+
+	if len(np_array.shape) == 3 and np_array.shape[2] == 3: # color image
+		color = True
+	elif len(np_array.shape) == 2 or len(np_array.shape) == 3 and np_array.shape[2] == 1: # greyscale
+		color = False
+	else:
+		raise Exception('Image must have H x W x 3, H x W x 1 or H x W dimensions.')
+
+	with open(filepath, "w") as file:
+		file.write('PF\n' if color else 'Pf\n')
+		file.write('%d %d\n' % (np_array.shape[1], np_array.shape[0]))
+
+		endian = np_array.dtype.byteorder
+
+		file.write('%f\n' % 1)
+
+		np_array.tofile(file)
 
 class ImageBuilder(object):
 	@classmethod
@@ -19,6 +46,7 @@ class ImageBuilder(object):
 		image_operations = get_image_operations(cfg)
 		mesh_npz_filepath = root_dir / f"{seed:0{pad}}" / "mesh.npz"
 		mesh_stl_filepath = root_dir / f"{seed:0{pad}}" / "mesh.stl"
+		mesh_ply_filepath = root_dir / f"{seed:0{pad}}" / "mesh.ply"
 		mesh = cls.load_mesh(mesh_npz_filepath)
 
 		if not overwrite:
@@ -47,6 +75,7 @@ class ImageBuilder(object):
 		processed_images = cls.process_images(raw_images, raw_depths, raw_matrices, image_operations)
 
 		save_as_png = cfg.get_config("output/save/images_as_png")
+		save_as_pfm = cfg.get_config("output/save/depths_as_pfm")
 
 		for imageset_name, imageset_data in processed_images.items():
 			imageset_images, imageset_depths, imageset_matrices = imageset_data
@@ -72,6 +101,14 @@ class ImageBuilder(object):
 					im = Image.fromarray(rgb_image.astype(np.uint8))
 
 					im.save(png_folder / f"image_{i}.png")
+			if save_as_pfm:
+				pfm_folder = save_to / "depths"
+				pfm_folder.mkdir(parents=True, exist_ok=True)
+
+				for i in range(imageset_depths.shape[2]):
+					arr = imageset_depths[:,:,i]
+
+					save_np_to_pfm(arr, pfm_folder / f"depth_{i}.pfm")
 
 		return True
 

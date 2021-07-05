@@ -1,7 +1,10 @@
 import argparse
 import numpy as np
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
+import trimesh as tm
+
+parser = argparse.ArgumentParser(description='Visualise the generated voxel grid on top of the mesh.')
+parser.add_argument('binvox_file', type=str, help='Path to the model.binvox file you want to visualise.')
+args = parser.parse_args()
 
 class Voxels(object):
     """ Holds a binvox model.
@@ -220,20 +223,14 @@ def write(voxel_model, fp):
         fp.write(bytes([state]))
         fp.write(bytes([ctr]))
 
-parser = argparse.ArgumentParser(description='Visualise the generated voxel grid.')
-parser.add_argument('binvox_file', type=str, help='Path to the model.binvox file you want to visualise.')
-args = parser.parse_args()
+with open(args.binvox_file, 'rb') as f:
+    voxels = read_as_3d_array(f)
+    voxels = voxels.data.astype(np.float32)
 
-try:
-    with open(args.binvox_file, 'rb') as f:
-        voxels = read_as_3d_array(f)
-except Exception as e:
-    print(e)
-    print(args.binvox_file)
-    quit()
+with open(args.binvox_file, 'rb') as f:
+    v = tm.exchange.binvox.load_binvox(f)
 
-voxels = voxels.data.astype(np.float32)
-ax = plt.figure().add_subplot(projection='3d')
-ax.voxels(voxels, edgecolor='k')
-
-plt.show()
+print(v.bounds)
+print([i.min() for i in np.nonzero(voxels)])
+print([i.max() for i in np.nonzero(voxels)])
+v.show()

@@ -103,7 +103,7 @@ patient:
             number: 100000
             uniform_ratio: 0.9
         pointcloud:
-            number: 2048
+            number: 100000
         voxels:
             resolution: 32
         normalise: True
@@ -193,6 +193,7 @@ output:
         - matrix
         images_as_png: true
         images_as_numpy: true
+        depths_as_pfm: true
         points: true
         pointcloud: true
         voxels: true

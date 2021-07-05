@@ -21,7 +21,7 @@ from .libvoxelize.voxelize import voxelize_mesh_
 class MeshSampler(object):
 	@classmethod
 	def sample(cls, path, get_points=True, get_pointcloud=True, get_voxels=True, points_size=100000, points_uniform_ratio=0.9, pointcloud_size=2048, voxels_res=32, resize=True, overwrite=False):
-		points, occupancies, pointcloud, voxels = cls.get_points_and_voxels(
+		points, occupancies, pointcloud, voxels, normalised_mesh, loc, scale = cls.get_data(
 			path, 
 			get_points=get_points,
 			get_pointcloud=get_pointcloud,
@@ -33,10 +33,11 @@ class MeshSampler(object):
 			resize=resize, 
 			overwrite=overwrite
 		)
-		cls.save_data(path, points=points, occupancies=occupancies, pointcloud=pointcloud, voxels=voxels)
+
+		cls.save_data(path, points, occupancies, pointcloud, voxels, normalised_mesh, loc, scale)
 
 	@classmethod
-	def get_points_and_voxels(cls, path, get_points=True, get_pointcloud=True, get_voxels=True,resize=False,bbox_padding=0,
+	def get_data(cls, path, get_points=True, get_pointcloud=True, get_voxels=True,resize=False,bbox_padding=0,
 						rotate_xz=0, voxels_res=32, points_size=100000, points_uniform_ratio=1., pointcloud_size=2048, overwrite=False):
 		if not overwrite and (path / "points.npz").exists():
 			get_points = False
@@ -47,7 +48,7 @@ class MeshSampler(object):
 		if not overwrite and (path / "model.binvox").exists():
 			get_voxels = False
 
-		if not get_points and not get_pointcloud and not get_voxels: return (None, None, None, None)
+		if not get_points and not get_pointcloud and not get_voxels: return (None,) * 7
 
 		mesh = trimesh.load(path / "mesh.ply",process=False)
 		if not mesh.is_watertight:
@@ -80,24 +81,26 @@ class MeshSampler(object):
 			pointcloud = cls.get_pointcloud(mesh, pointcloud_size) if get_pointcloud else None
 		except Exception as e:
 			print(f"Error with item {ply_file}: {e}")
-			return (None, None, None, None)
+			return (None,) * 7
 
-		return points, occupancies, pointcloud, voxels
+		return points, occupancies, pointcloud, voxels, mesh, loc, scale
 
 	@classmethod
-	def save_data(cls, path, points=None, occupancies=None, pointcloud=None, voxels=None):
-		loc_data=np.array([0.,0.,0.])
-		scale_data=np.array(1.)
+	def save_data(cls, path, points=None, occupancies=None, pointcloud=None, voxels=None, normalised_mesh=None, loc=None, scale=None):
 
 		if voxels is not None:
 			with open(path / "model.binvox","wb") as f:
 				voxels.write(f)
 
 		if points is not None:
-			np.savez(path / "points.npz", points=points, occupancies=occupancies, loc=loc_data, scale=scale_data)
+			np.savez(path / "points.npz", points=points, occupancies=occupancies, loc=loc, scale=scale)
 		
 		if pointcloud is not None:
 			np.save(path / "pointcloud.npy", pointcloud)
+
+		if normalised_mesh is not None:
+			normalised_mesh.export(path / "normalised_mesh.ply")
+			normalised_mesh.export(path / "normalised_mesh.stl")
 
 	@classmethod
 	def get_voxels(cls, mesh, loc, scale, voxels_res=32):
@@ -144,8 +147,9 @@ class MeshSampler(object):
 	def voxelize_ray(cls, mesh, resolution):
 		occ_surface = cls.voxelize_surface(mesh, resolution)
 		# TODO: use surface voxels here?
-		occ_interior = cls.voxelize_interior(mesh, resolution)
+		occ_interior = cls.voxelize_interior(mesh, resolution).transpose([1,0,2])
 		occ = (occ_interior | occ_surface)
+		# occ = occ_interior
 		return occ
 
 	@classmethod

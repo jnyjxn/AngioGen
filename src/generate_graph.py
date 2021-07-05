@@ -8,6 +8,9 @@ def main(config_path, overwrite=False):
 	default_config_path = (Path(__file__) / '../../config/default.yaml').resolve()
 	cfg = get_config(config_path, default_config_path)
 
+	if cfg.get_config("patient/use_existing_meshes"):
+		return
+
 	generate_networks(cfg, overwrite=overwrite)
 
 if __name__ == "__main__":

@@ -277,6 +277,7 @@ class XRayRenderer(_Renderer):
 
 	def generate_data(self, stl_filepath, mesh, **kwargs):
 		self.gvxr.loadSceneGraph(stl_filepath, "mm")
+		# self.gvxr.loadMeshFile("Exported", stl_filepath, "mm")
 		self.gvxr.setElement("Exported", "I")
 		# self.gvxr.setHU("Exported", 1000)
 
